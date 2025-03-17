@@ -48,4 +48,40 @@ export class UserService {
       throw new NotFoundException(`User with ID ${id} not found`);
     }
   }
+
+  async findUserByEmail(email: string): Promise<User | null> {
+    return this.userRepository.findOne({ where: { email } });
+  }
+
+  async createUser(userData: Partial<User>): Promise<User> {
+    const user = this.userRepository.create(userData);
+    return this.userRepository.save(user);
+  }
+
+  getUserByFilter(filters: any) {
+    const query = this.userRepository.createQueryBuilder('user');
+
+    if (filters.name) {
+      query.andWhere('user.name LIKE :name', { name: `%${filters.name}%` });
+    }
+    if (filters.phone) {
+      query.andWhere('user.phone LIKE :phone', { phone: `%${filters.phone}%` });
+    }
+    if (filters.email) {
+      query.andWhere('user.email LIKE :email', { email: `%${filters.email}%` });
+    }
+    if (filters.role) {
+      query.andWhere('user.role = :role', { role: filters.role });
+    }
+    if (filters.status) {
+      query.andWhere('user.status = :status', { status: filters.status });
+    }
+    if (filters.createdAt) {
+      query.andWhere('DATE(user.createdAt) = :createdAt', {
+        createdAt: filters.createdAt,
+      });
+    }
+
+    return query.getMany();
+  }
 }

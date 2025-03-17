@@ -5,9 +5,14 @@ import {
   ManyToOne,
   JoinColumn,
 } from 'typeorm';
-import { Role } from '../../role/entities/role.entity';
+import { RoleEntity } from '../../role/entities/role.entity';
 
-@Entity('users')
+export enum UserStatus {
+  WORKING = '1',
+  INACTIVE = '0',
+}
+
+@Entity('user')
 export class User {
   @PrimaryGeneratedColumn()
   id: number;
@@ -27,16 +32,17 @@ export class User {
   @Column({ type: 'varchar', length: 255, nullable: true })
   address: string;
 
-  @Column({ type: 'tinyint', default: 1 }) // 1: Active, 0: Inactive
-  status: number;
+  @Column({ type: 'enum', enum: UserStatus, default: UserStatus.WORKING })
+  status: UserStatus;
 
-  @Column({ type: 'tinyint', default: 0 }) // Xóa mềm (0: Chưa xóa, 1: Đã xóa)
+  @Column({ type: 'tinyint', default: 0 })
   isDelete: number;
 
-  @ManyToOne(() => Role, (role) => role.users, { eager: true }) // Liên kết với Role
+  @ManyToOne(() => RoleEntity, (role) => role.users, { eager: true })
   @JoinColumn({ name: 'role_id' })
-  role: Role;
-
+  role: RoleEntity;
+  @Column({ type: 'datetime', nullable: true })
+  createdAt: Date;
   @Column({ type: 'int', nullable: true })
   managerId: number;
 }
