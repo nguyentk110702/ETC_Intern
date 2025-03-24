@@ -1,12 +1,37 @@
-import { Module } from '@nestjs/common';
-import { AuthService } from './auth.service';
+import {
+  MiddlewareConsumer,
+  Module,
+  NestModule,
+  RequestMethod,
+} from '@nestjs/common';
 import { AuthController } from './auth.controller';
-import { UserModule } from '../user/user.module';
+import { AuthService } from './auth.service';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { AuthEntity } from './auth.entity';
+import { AuthMiddleware } from './auth.middleware';
+import { RoleEntity } from '../role/role.entity';
+import { RoleModule } from '../role/role.module';
 
 @Module({
+  imports: [TypeOrmModule.forFeature([AuthEntity, RoleEntity])],
   controllers: [AuthController],
   providers: [AuthService],
-  exports: [AuthService],
-  imports: [UserModule],
 })
-export class AuthModule {}
+export class AuthModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer.apply(AuthMiddleware).forRoutes(
+      {
+        path: 'auth/users',
+        method: RequestMethod.GET,
+      },
+      {
+        path: 'auth/edit/:id',
+        method: RequestMethod.POST,
+      },
+      {
+        path: 'auth/delete/:id',
+        method: RequestMethod.DELETE,
+      },
+    );
+  }
+}

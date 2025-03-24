@@ -1,10 +1,15 @@
 import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm';
 import { Exclude, Transform, TransformFnParams } from 'class-transformer';
-import { RoleEntity } from 'src/role/entities/role.entity';
-import { UserStatus } from '../user/entities/user.entity';
+import { RoleEntity } from '../role/role.entity';
+import { CommonEntity } from '../common/entity/common.entity';
 
-@Entity('auth')
-export class AuthEntity {
+export enum UserStatus {
+  WORKING,
+  RESIGNED,
+}
+
+@Entity({ name: 'user' })
+export class AuthEntity extends CommonEntity {
   @Column({ nullable: true })
   managerId: number;
 
@@ -29,7 +34,7 @@ export class AuthEntity {
   role: RoleEntity;
 
   @Column({
-    type: 'enum',
+    type: 'tinyint',
     enum: UserStatus,
     default: null,
     nullable: true,
@@ -40,8 +45,8 @@ export class AuthEntity {
       return `${UserStatus[value]?.toLowerCase()}`;
     },
     {
-      toPlainOnly: true,
-      toClassOnly: false,
+      toPlainOnly: true, //biến đổi khi chuyển từ class sang object ,    ,,instanceToPlain
+      toClassOnly: false, // biến đổi từ object sang class ,, plainToInstance
     },
   )
   status: number;

@@ -1,65 +1,139 @@
-import { Body, Controller, Post, Req, Res } from '@nestjs/common';
-import { AuthService } from './auth.service';
+import {
+  Body,
+  ClassSerializerInterceptor,
+  Controller,
+  Get,
+  Param,
+  Post,
+  Put,
+  Query,
+  Req,
+  Res,
+  Session,
+  SetMetadata,
+  UseGuards,
+  UseInterceptors,
+} from '@nestjs/common';
+import { AuthService, userSessionType } from './auth.service';
 import { Request, Response } from 'express';
-import { RegisterDto } from './dto/register.dto';
+import { LoginDto } from './dto/login.dto';
+import { CreateUserDto } from './dto/createUser.dto';
+import { EditUserDto } from './dto/editUser.dto';
+import { CreateEmployeeDto } from './dto/createEmployee.dto';
+import { AuthGuard } from './auth.guard';
+import { EditEmployeeDto } from './dto/editEmployee.dto';
 
-@Controller('auth')
+@Controller()
+@UseInterceptors(ClassSerializerInterceptor)
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(private authService: AuthService) {}
 
   @Post('login')
-  async login(@Body() body, @Req() req: Request) {
-    try {
-      const { email, password } = body;
-
-      if (!email || !password) {
-        return { message: 'Email và mật khẩu là bắt buộc' };
-      }
-
-      const user = await this.authService.findUserByEmail(email);
-      if (!user) {
-        return { message: 'Người dùng không tồn tại' };
-      }
-
-      const isMatch = await this.authService.comparePassword(
-        password,
-        user.password,
-      );
-      if (!isMatch) {
-        return { message: 'Sai mật khẩu' };
-      }
-
-      req.session.user = { id: user.id.toString(), email: user.email };
-      console.log('Session sau khi login:', req.session);
-
-      return { message: 'Đăng nhập thành công', user };
-    } catch (error) {
-      console.log(error);
-    }
-  }
-
-  @Post('register')
-  async register(@Body() body: RegisterDto) {
-    return this.authService.register(
-      body.fullname,
-      body.email,
-      body.password,
-      body.repassword,
+  async login(@Body() body: LoginDto, @Session() session: Record<string, any>) {
+    return await this.authService.login(
+      { email: body.email, password: body.password, phone: body.phone },
+      session,
     );
   }
 
-  @Post('logout')
-  async logout(@Req() req: Request, @Res() res: Response) {
-    if (!req.session.user) {
-      return res.status(400).json({ message: 'Chưa đăng nhập' });
-    }
+  @Post('register')
+  async register(@Body() body: CreateUserDto) {
+    return await this.authService.register(body);
+  }
 
-    (req.session as any).destroy((err: any) => {
-      if (err) {
-        console.error('Lỗi khi logout:', err);
-        return res.status(500).json({ message: 'Lỗi khi đăng xuất' });
+  @SetMetadata('roles', ['ADMIN', 'MANAGER'])
+  @UseGuards(AuthGuard)
+  @Post('employee')
+  createEmployee(
+    @Body() body: CreateEmployeeDto,
+    @Session() session: Record<string, userSessionType>,
+  ) {
+    return this.authService.createEmployee(body, session);
+  }
+
+  @UseGuards(AuthGuard)
+  @Get('employee')
+  getAllEmployeeByIdManager(
+    @Query('search') search: string,
+    @Query('page') page: number,
+    @Query('limit') limit: number,
+    @Query('role') role: string,
+    @Query('createAt') createAt: string,
+    @Query('status') status: number,
+    @Session() session: Record<string, userSessionType>,
+  ) {
+    return this.authService.getAllEmployeeByIdManager(
+      search,
+      page,
+      limit,
+      role,
+      createAt,
+      status,
+      session,
+    );
+  }
+
+  @Get('session')
+  getSession(@Session() session: Record<string, any>, @Res() res: Response) {
+    try {
+      const sessionUser = session.userData;
+      if (sessionUser) {
+        res.json(sessionUser);
+      } else {
+        res.status(401).json({ message: 'No active session' });
       }
-      return res.status(200).json({ message: 'Đăng xuất thành công' });
-    });
+    } catch {
+      console.log('error');
+    }
+  }
+
+  @Get('logout')
+  clearSession(
+    @Req() req: Request,
+    @Res() res: Response,
+    @Session() session: Record<string, any>,
+  ) {
+    try {
+      session.destroy((err) => {
+        if (err) {
+          console.error('Error destroying session:', err);
+          return res.status(500).json({ message: 'Failed to clear session' });
+        }
+
+        res.clearCookie('SESSION_TWICE', { path: '/' });
+        return res
+          .status(200)
+          .json({ message: 'Session cleared successfully' });
+      });
+    } catch (error) {
+      console.error('Error:', error);
+      return res.status(500).json({ message: 'An error occurred' });
+    }
+  }
+
+  @UseGuards(AuthGuard)
+  @Put(':id')
+  editUser(@Param('id') id: number, @Body() body: EditUserDto) {
+    return this.authService.editUser(id, body);
+  }
+
+  @SetMetadata('roles', ['MANAGER', 'ADMIN'])
+  @UseGuards(AuthGuard)
+  @Put('employee/:id')
+  editEmployee(
+    @Param('id') id: number,
+    @Body() body: EditEmployeeDto,
+    @Session() session: Record<string, userSessionType>,
+  ) {
+    return this.authService.editEmployee(id, body, session);
+  }
+
+  @UseGuards(AuthGuard)
+  @Get('employee/:id')
+  async getEmployeeDetail(
+    @Param('id') id: number,
+    @Session() session: Record<string, userSessionType>,
+  ) {
+    return this.authService.getEmployeeDetail(id, session);
   }
 }
