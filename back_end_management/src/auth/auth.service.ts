@@ -1,4 +1,5 @@
 import {
+  ConflictException,
   ForbiddenException,
   HttpException,
   HttpStatus,
@@ -17,7 +18,6 @@ import { EditUserDto } from './dto/editUser.dto';
 import { CreateEmployeeDto } from './dto/createEmployee.dto';
 import { EditEmployeeDto } from './dto/editEmployee.dto';
 import { RoleEntity } from '../role/role.entity';
-import session from 'express-session';
 
 export interface userSessionType {
   id: number;
@@ -61,11 +61,6 @@ export class AuthService {
       );
     }
     const isMatch = await bcrypt.compare(data.password, user.password);
-    console.log('Mật khẩu nhập:', data.password);
-    console.log('Mật khẩu trong DB:', user.password);
-    console.log('Kết quả so sánh:', isMatch);
-
-    console.log('isMatch', isMatch);
     if (isMatch == true) {
       session.userData = {
         id: user.id,
@@ -139,13 +134,19 @@ export class AuthService {
     const idUser = session.userData;
     if (!idUser || (idUser.role !== 'MANAGER' && idUser.role !== 'ADMIN'))
       throw new ForbiddenException('you are not manager');
-
     const role = await this.roleRepository.findOne({
       where: { id: body.id_role },
     });
     if (!role) {
-      throw new HttpException('Role not found', HttpStatus.NOT_FOUND);
+      throw new NotFoundException('Role not found');
     }
+    if (role.name === 'ADMIN') {
+      throw new ForbiddenException('Cannot create another ADMIN');
+    }
+    if (idUser.role === 'MANAGER' && role.name === 'MANAGER') {
+      throw new ForbiddenException('MANAGER cannot create another MANAGER');
+    }
+
     const slatRound = 10;
     const hash = await bcrypt.hash(body.password, slatRound);
     const user = this.authRepository.create({
@@ -158,7 +159,10 @@ export class AuthService {
       status: body.status,
     });
     await this.authRepository.save(user);
-    return user;
+    return {
+      message: 'Employee created successfully',
+      user,
+    };
   }
 
   async getAllEmployeeByIdManager(
@@ -298,7 +302,6 @@ export class AuthService {
       const isManager = user.role?.name === 'MANAGER';
       const isStaff = user.role?.name === 'STAFF';
 
-      // 🚨 Phân quyền khi chỉnh sửa
       if (isStaff && findEmployee.id !== user.id) {
         throw new ForbiddenException('You can only edit your own profile');
       }
@@ -308,7 +311,6 @@ export class AuthService {
         );
       }
 
-      // Nếu có cập nhật role, kiểm tra role hợp lệ
       if (body.role) {
         const findRole = await this.roleRepository.findOne({
           where: { id: body.role },
@@ -317,7 +319,6 @@ export class AuthService {
         findEmployee.role = findRole;
       }
 
-      // Cập nhật thông tin nhân viên
       findEmployee.email = body.email;
       findEmployee.phone = body.phone;
       findEmployee.status = body.status; // 0 hoặc 1
@@ -364,7 +365,6 @@ export class AuthService {
 
       if (!user) throw new NotFoundException('User not found');
 
-      const isAdmin = user.role?.name === 'ADMIN';
       const isManager = user.role?.name === 'MANAGER';
       const isStaff = user.role?.name === 'STAFF';
 

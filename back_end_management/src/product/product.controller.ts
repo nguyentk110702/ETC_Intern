@@ -16,8 +16,6 @@ import {
 import { ProductsService } from './product.service';
 import { CreateProductDto } from './dto/createProduct.dto';
 import { AuthGuard } from '../auth/auth.guard';
-import { CreateVarianDto } from './dto/createVariant.dto';
-import { FileInterceptor } from '@nestjs/platform-express';
 
 @UseGuards(AuthGuard)
 @Controller('product')
@@ -56,7 +54,12 @@ export class ProductController {
     return this.productService.update(id, updateData);
   }
 
+  @Delete(':id')
   @SetMetadata('roles', ['ADMIN'])
+  async removeSoft(@Param('id') id: number) {
+    return this.productService.softDelete(id);
+  }
+
   @Delete(':id')
   async remove(@Param('id') id: number) {
     return this.productService.remove(id);

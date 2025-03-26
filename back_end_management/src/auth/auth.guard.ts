@@ -10,12 +10,11 @@ import { Reflector } from '@nestjs/core';
 
 @Injectable()
 export class AuthGuard implements CanActivate {
-  constructor(private reflector: Reflector) { }
+  constructor(private reflector: Reflector) {}
 
   canActivate(
     context: ExecutionContext,
   ): boolean | Promise<boolean> | Observable<boolean> {
-    
     const requiredRoles = this.reflector.get<string[]>(
       'roles',
       context.getHandler(),
@@ -24,9 +23,6 @@ export class AuthGuard implements CanActivate {
       .switchToHttp()
       .getRequest<Request>();
     const userRole = request?.session?.userData?.role;
-    // console.log('Session trong AuthGuard:', request.session);
-    // console.log('UserData trong session:', request.session?.userData);
-    // console.log('requiredRoles', requiredRoles?.includes(userRole));
     if (!userRole) {
       throw new UnauthorizedException('You are not authorized');
     }

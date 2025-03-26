@@ -1,19 +1,22 @@
 import {
+  ArrayMinSize,
+  IsArray,
   IsEnum,
   IsInt,
   IsNotEmpty,
   IsOptional,
   IsString,
+  ValidateNested,
 } from 'class-validator';
+import { ShippingStatus } from '../../entities/entities/Order';
+import { Type } from 'class-transformer';
+import { OrderItems } from '../../entities/entities/OrderItems';
 
 export class CreateOrderDTO {
   @IsNotEmpty()
   @IsString()
   orderCode: string;
-
-  @IsInt()
-  price: number;
-
+  
   @IsOptional()
   @IsInt()
   discount?: number;
@@ -36,7 +39,7 @@ export class CreateOrderDTO {
   @IsInt()
   paymentMethodId?: number;
 
-  @IsNotEmpty()
+  @IsNotEmpty({ message: 'Shipping address is required' })
   @IsString()
   addressShipping: string;
 
@@ -50,4 +53,15 @@ export class CreateOrderDTO {
 
   @IsInt()
   createById: number;
+
+  @IsEnum(ShippingStatus)
+  @IsOptional()
+  shippingStatus?: ShippingStatus;
+
+  @Type(() => OrderItems)
+  @IsNotEmpty()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @ArrayMinSize(1)
+  items: OrderItems[];
 }

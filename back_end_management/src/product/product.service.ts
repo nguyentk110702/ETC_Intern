@@ -1,31 +1,14 @@
-import {
-  ConflictException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Like, Repository } from 'typeorm';
 import { CreateProductDto } from './dto/createProduct.dto';
 import { ProductEntity } from './product.entity';
-import { CreateVarianDto } from './dto/createVariant.dto';
-import { Color } from '../../entities/entities/Color';
-import { Size } from '../../entities/entities/Size';
-import { Material } from '../../entities/entities/Material';
-import { ProductVariant } from '../../entities/entities/ProductVariant';
 
 @Injectable()
 export class ProductsService {
   constructor(
     @InjectRepository(ProductEntity)
     private productRepository: Repository<ProductEntity>,
-    @InjectRepository(ProductVariant)
-    private readonly varianRepo: Repository<ProductVariant>,
-    @InjectRepository(Color)
-    private readonly colorRepo: Repository<Color>,
-    @InjectRepository(Size)
-    private readonly sizeRepo: Repository<Size>,
-    @InjectRepository(Material)
-    private readonly materialRepo: Repository<Material>,
   ) {}
 
   async create(createProductDto: CreateProductDto): Promise<ProductEntity> {
@@ -91,6 +74,27 @@ export class ProductsService {
       throw new NotFoundException(`Product with ID ${id} not found`);
     }
     return updatedProduct;
+  }
+
+  async softDelete(id: number): Promise<void> {
+    const product = await this.productRepository.findOne({
+      where: { id },
+      relations: ['variants'], // Lấy danh sách các variants liên quan
+    });
+
+    if (!product) throw new NotFoundException('Product not found');
+
+    // ✅ Xóa mềm Product
+    product.isDelete = 1;
+    await this.productRepository.save(product);
+
+    // ✅ Xóa mềm các Variants liên quan
+    if (product.productVariants?.length) {
+      for (const variant of product.productVariants) {
+        variant.isDelete = 1;
+        await this.productRepository.save(variant);
+      }
+    }
   }
 
   async remove(id: number): Promise<void> {

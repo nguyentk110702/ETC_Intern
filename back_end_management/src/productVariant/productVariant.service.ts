@@ -48,7 +48,6 @@ export class ProductVariantService {
       }),
     ]);
 
-    // 🔹 Nếu thuộc tính chưa có => tạo mới
     const [newColor, newSize, newMaterial] = await Promise.all([
       findColor ||
         this.colorRepo.save({ name: body.color, product: findProduct }),
@@ -57,7 +56,6 @@ export class ProductVariantService {
         this.materialRepo.save({ name: body.material, product: findProduct }),
     ]);
 
-    // 🔹 Kiểm tra biến thể đã tồn tại chưa
     const checkVarian = await this.varianRepo.findOne({
       where: {
         color: { id: newColor.id },
@@ -70,7 +68,6 @@ export class ProductVariantService {
 
     if (checkVarian) throw new ConflictException('Variant already exists');
 
-    // 🔹 Tạo mới biến thể sản phẩm
     const createVarian = this.varianRepo.create({
       skuCode: body.skuCode,
       barCode: body.barCode,
@@ -87,7 +84,6 @@ export class ProductVariantService {
       createdAt: new Date(),
       updatedAt: new Date(),
     });
-
     return await this.varianRepo.save(createVarian);
   }
 

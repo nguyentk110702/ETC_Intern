@@ -8,7 +8,7 @@ export class OrderItems {
   @Column('int', { primary: true, name: 'orderId' })
   orderId: number;
 
-  @Column('int', { primary: true, name: 'variantId' })
+  @Column('int', { primary: true, name: 'variantId', nullable: false })
   variantId: number;
 
   @Column('int', { name: 'quantity' })
@@ -18,7 +18,11 @@ export class OrderItems {
     onDelete: 'CASCADE',
     onUpdate: 'NO ACTION',
   })
-  @JoinColumn([{ name: 'orderId', referencedColumnName: 'id' }])
+  @ManyToOne(() => Order, (order) => order.orderItems, {
+    nullable: false,
+    onDelete: 'CASCADE',
+  })
+  @JoinColumn({ name: 'orderId' })
   order: Order;
 
   @ManyToOne(

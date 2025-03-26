@@ -13,6 +13,7 @@ import { PaymentMethod } from '../entities/entities/PaymentMethod';
 import { Size } from '../entities/entities/Size';
 import { Material } from '../entities/entities/Material';
 import { ProductVariantModule } from './productVariant/productVariant.module';
+import { OrderModule } from './order/order.module';
 
 @Module({
   imports: [
@@ -41,6 +42,7 @@ import { ProductVariantModule } from './productVariant/productVariant.module';
     ProductModule,
     RoleModule,
     ProductVariantModule,
+    OrderModule,
   ],
 })
 export class AppModule {}

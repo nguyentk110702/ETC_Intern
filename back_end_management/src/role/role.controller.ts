@@ -20,7 +20,6 @@ export class RoleController {
     return this.roleService.findAllRole();
   }
 
-  //
   @SetMetadata('roles', ['MANAGER'])
   @UseGuards(AuthGuard)
   @Post()

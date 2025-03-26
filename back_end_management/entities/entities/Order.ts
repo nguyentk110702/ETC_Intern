@@ -8,9 +8,14 @@ import {
   PrimaryGeneratedColumn,
 } from 'typeorm';
 import { PaymentMethod } from './PaymentMethod';
-import { User } from './User';
 import { OrderItems } from './OrderItems';
 import { AuthEntity } from '../../src/auth/auth.entity';
+
+export enum ShippingStatus {
+  PENDING = 'PENDING', // Giao hàng sau
+  SHIPPED = 'SHIPPED', // Đẩy qua hãng vận chuyển
+  DELIVERED = 'DELIVERED', // Đã giao hàng
+}
 
 @Index('createById', ['createById'], {})
 @Index('orderCode', ['orderCode'], { unique: true })
@@ -20,10 +25,17 @@ export class Order {
   @PrimaryGeneratedColumn({ type: 'int', name: 'id' })
   id: number;
 
-  @Column('datetime', { name: 'created_at' })
+  @Column('datetime', {
+    name: 'created_at',
+    default: () => 'CURRENT_TIMESTAMP',
+  })
   createdAt: Date;
 
-  @Column('datetime', { name: 'updated_at' })
+  @Column('datetime', {
+    name: 'updated_at',
+    default: () => 'CURRENT_TIMESTAMP',
+    onUpdate: 'CURRENT_TIMESTAMP',
+  })
   updatedAt: Date;
 
   @Column('tinyint', { name: 'isDelete', nullable: true, default: () => "'0'" })
@@ -32,7 +44,7 @@ export class Order {
   @Column('varchar', { name: 'orderCode', unique: true, length: 255 })
   orderCode: string;
 
-  @Column('int', { name: 'price' })
+  @Column({ type: 'bigint', default: 0 })
   price: number;
 
   @Column('int', { name: 'discount', nullable: true, default: () => "'0'" })
@@ -57,11 +69,16 @@ export class Order {
 
   @Column('int', { name: 'tax', nullable: true, default: () => "'0'" })
   tax: number | null;
-
+  @Column({ type: 'decimal', default: 0 })
+  totalPrice: number;
   @Column('int', { name: 'paymentMethodId', nullable: true })
   paymentMethodId: number | null;
 
-  @Column('varchar', { name: 'address_shipping', length: 255 })
+  @Column('varchar', {
+    default: 'Default Address',
+    name: 'address_shipping',
+    length: 255,
+  })
   addressShipping: string;
 
   @Column('varchar', { name: 'area', nullable: true, length: 255 })
@@ -80,13 +97,23 @@ export class Order {
   @JoinColumn([{ name: 'paymentMethodId', referencedColumnName: 'id' }])
   paymentMethod: PaymentMethod;
 
-  @ManyToOne(() => User, (user) => user.orders, {
+  @ManyToOne(() => AuthEntity, (user) => user.id, {
     onDelete: 'SET NULL',
     onUpdate: 'NO ACTION',
   })
   @ManyToOne(() => AuthEntity, (user) => user.id)
   createBy: AuthEntity;
 
-  @OneToMany(() => OrderItems, (orderItems) => orderItems.order)
+  @OneToMany(() => OrderItems, (orderItem) => orderItem.order, {
+    cascade: true,
+  })
   orderItems: OrderItems[];
+  @Column('enum', {
+    name: 'shippingStatus',
+    comment:
+      'PENDING: Giao hàng sau, SHIPPED: Đẩy qua hãng vận chuyển, DELIVERED: Đã giao hàng',
+    enum: ShippingStatus,
+    default: ShippingStatus.PENDING, // Mặc định là "Giao hàng sau"
+  })
+  shippingStatus: ShippingStatus;
 }
