@@ -1,8 +1,8 @@
 <template>
-  <router-view/>
+  <router-view></router-view>
 </template>
 
 <script setup>
-import Register from "@/pages/auth/register.vue";
+import Dashboard from "@/components/Dashboard.vue";
 
 </script>

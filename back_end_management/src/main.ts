@@ -7,6 +7,14 @@ import * as passport from 'passport';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
+  // ✅ Bật CORS để cho phép frontend truy cập
+  app.enableCors({
+    origin: 'http://localhost:5174', // Chỉ cho phép frontend này
+    credentials: true, // Quan trọng nếu dùng session hoặc cookies
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+    allowedHeaders: 'Content-Type,Authorization',
+  });
+
   app.useGlobalPipes(new ValidationPipe());
 
   app.use(
@@ -22,6 +30,9 @@ async function bootstrap() {
   app.use(passport.session());
 
   await app.listen(process.env.PORT ?? 3000);
+  console.log(
+    `🚀 Server running on http://localhost:${process.env.PORT ?? 3000}`,
+  );
 }
 
 bootstrap();

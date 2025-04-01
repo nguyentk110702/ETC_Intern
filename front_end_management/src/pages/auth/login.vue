@@ -26,18 +26,18 @@
             </div>
 
             <a-form-item>
-              <a-button type="primary" block @click="login">Đăng nhập</a-button>
+              <a-button type="primary" block @click="handleLogin" :loading="loading">Đăng nhập</a-button>
             </a-form-item>
 
             <p class="register-link">
               Bạn chưa có tài khoản?
-              <router-link to="/register">Đăng ký</router-link>
+              <router-link to="/">Đăng ký</router-link>
             </p>
 
             <div class="social-login">
               <span>Đăng nhập với</span>
               <a-button class="google-btn" block>
-                <img src="/favicon.ico" alt="Google" class="google-icon"/>
+                <img src="https://khungnangluc.com/assets/google-e667d2f2.svg" alt="Google" class="google-icon"/>
                 Google
               </a-button>
             </div>
@@ -51,8 +51,12 @@
 </template>
 
 <script setup>
-import {reactive} from "vue";
-import "../../assets/styles/login.css";
+import {onMounted, reactive, ref} from "vue";
+import { message } from "ant-design-vue";
+import { useRouter } from "vue-router";
+import apiClient from "../../../axios.js";
+const router = useRouter();
+const loading = ref(false);
 
 const form = reactive({
   email: "",
@@ -60,9 +64,55 @@ const form = reactive({
   remember: false,
 });
 
-const login = () => {
-  console.log("Đăng nhập với:", form);
+const handleLogin = async () => {
+  if (!form.email.trim() || !form.password.trim()) {
+    message.error("Vui lòng nhập email và mật khẩu!");
+    return;
+  }
+
+  loading.value = true;
+
+  try {
+    const response = await apiClient.post("/login", {
+      email: form.email.trim(),
+      password: form.password,
+    });
+
+    message.success("Đăng nhập thành công!");
+
+    // Lưu thông tin vào localStorage nếu người dùng chọn "Lưu tài khoản"
+    if (form.remember) {
+      localStorage.setItem("user", JSON.stringify(response.data.user));
+      localStorage.setItem("token", response.data.token);
+    } else {
+      sessionStorage.setItem("token", response.data.token);
+    }
+
+    // Chuyển hướng sau khi đăng nhập
+    router.push("/home");
+  } catch (error) {
+    if (error.response) {
+      switch (error.response.status) {
+        case 400:
+          message.error("Dữ liệu không hợp lệ, vui lòng kiểm tra lại!");
+          break;
+        case 401:
+          message.error("Sai email hoặc mật khẩu!");
+          break;
+        case 500:
+          message.error("Lỗi hệ thống, vui lòng thử lại sau!");
+          break;
+        default:
+          message.error(error.response.data.message || "Đăng nhập thất bại!");
+      }
+    } else {
+      message.error("Lỗi kết nối đến server!");
+    }
+  } finally {
+    loading.value = false;
+  }
+
 };
+
+
 </script>
-
-

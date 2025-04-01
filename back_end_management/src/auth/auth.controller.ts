@@ -3,6 +3,8 @@ import {
   ClassSerializerInterceptor,
   Controller,
   Get,
+  HttpException,
+  HttpStatus,
   Param,
   Post,
   Put,
@@ -30,10 +32,13 @@ export class AuthController {
 
   @Post('login')
   async login(@Body() body: LoginDto, @Session() session: Record<string, any>) {
-    return await this.authService.login(
+    const user = await this.authService.login(
       { email: body.email, password: body.password, phone: body.phone },
       session,
     );
+    session.user = user;
+    console.log('Session sau khi đăng nhập:', session);
+    return { message: 'Đăng nhập thành công', user };
   }
 
   @Post('register')
@@ -44,7 +49,7 @@ export class AuthController {
   @SetMetadata('roles', ['ADMIN', 'MANAGER'])
   @UseGuards(AuthGuard)
   @Post('employee')
-  createEmployee(
+  async createEmployee(
     @Body() body: CreateEmployeeDto,
     @Session() session: Record<string, userSessionType>,
   ) {
@@ -53,7 +58,7 @@ export class AuthController {
 
   @UseGuards(AuthGuard)
   @Get('employee')
-  getAllEmployeeByIdManager(
+  async getAllEmployeeByIdManager(
     @Query('search') search: string,
     @Query('page') page: number,
     @Query('limit') limit: number,
@@ -74,21 +79,41 @@ export class AuthController {
   }
 
   @Get('session')
-  getSession(@Session() session: Record<string, any>, @Res() res: Response) {
+  async getSession(@Session() session: Record<string, any>) {
     try {
-      const sessionUser = session.userData;
-      if (sessionUser) {
-        res.json(sessionUser);
-      } else {
-        res.status(401).json({ message: 'No active session' });
+      const sessionUser = session.user; // Kiểm tra lại biến session.user thay vì session.userData
+      if (!sessionUser) {
+        throw new HttpException('No active session', HttpStatus.UNAUTHORIZED);
       }
-    } catch {
-      console.log('error');
+      return { user: sessionUser };
+    } catch (error) {
+      throw new HttpException(
+        'Internal Server Error',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
   }
 
-  @Get('logout')
-  clearSession(
+  @Post('logout')
+  async logout(@Session() session: Record<string, any>, @Res() res: Response) {
+    try {
+      session.destroy((err) => {
+        if (err) {
+          return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
+            message: 'Lỗi khi đăng xuất!',
+          });
+        }
+        res.status(HttpStatus.OK).json({ message: 'Đăng xuất thành công!' });
+      });
+    } catch (error) {
+      res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
+        message: 'Có lỗi xảy ra!',
+      });
+    }
+  }
+
+  @Get('clearSession')
+  async clearSession(
     @Req() req: Request,
     @Res() res: Response,
     @Session() session: Record<string, any>,
@@ -113,14 +138,14 @@ export class AuthController {
 
   @UseGuards(AuthGuard)
   @Put(':id')
-  editUser(@Param('id') id: number, @Body() body: EditUserDto) {
+  async editUser(@Param('id') id: number, @Body() body: EditUserDto) {
     return this.authService.editUser(id, body);
   }
 
   @SetMetadata('roles', ['MANAGER', 'ADMIN'])
   @UseGuards(AuthGuard)
   @Put('employee/:id')
-  editEmployee(
+  async editEmployee(
     @Param('id') id: number,
     @Body() body: EditEmployeeDto,
     @Session() session: Record<string, userSessionType>,

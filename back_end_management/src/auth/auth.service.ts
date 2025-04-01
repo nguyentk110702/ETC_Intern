@@ -60,6 +60,13 @@ export class AuthService {
         HttpStatus.NOT_FOUND,
       );
     }
+    if (user.status === 1) {
+      throw new HttpException(
+        'Tài khoản của bạn đã bị khóa!',
+        HttpStatus.FORBIDDEN,
+      );
+    }
+
     const isMatch = await bcrypt.compare(data.password, user.password);
     if (isMatch == true) {
       session.userData = {
@@ -112,6 +119,7 @@ export class AuthService {
         password: hash,
         fullName: data.fullname,
         role: role,
+        status: 0,
       });
       const savedUser = await this.authRepository.save(user);
 

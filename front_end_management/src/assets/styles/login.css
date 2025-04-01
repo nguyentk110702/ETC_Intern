@@ -86,7 +86,7 @@ p {
 
 .login-bg {
     width: 50%;
-    background: url('/public/Chief-AI-Officer.jpg') no-repeat center center;
+    background: url('public/Chief-AI-Officer.jpg') no-repeat center center;
     background-size: cover;
 }
 
