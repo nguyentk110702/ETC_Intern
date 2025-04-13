@@ -17,10 +17,7 @@
         <template #icon><ShoppingOutlined /></template>
         <router-link to="/home/product">Sản phẩm</router-link>
       </a-menu-item>
-      <a-menu-item key="productvariant">
-        <template #icon><HomeOutlined /></template>
-        <router-link to="/home/productvariant">Phiên bản sản phẩm</router-link>
-      </a-menu-item>
+
       <a-menu-item key="orders">
         <template #icon><ShoppingCartOutlined /></template>
         <router-link to="/home/order">Đơn hàng</router-link>

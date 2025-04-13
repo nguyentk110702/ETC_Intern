@@ -35,7 +35,6 @@ export class ProductVariantService {
     });
     if (!findProduct) throw new NotFoundException('Product not found');
 
-    // 🔹 Tìm thuộc tính có sẵn trong DB
     const [findColor, findSize, findMaterial] = await Promise.all([
       this.colorRepo.findOne({
         where: { name: body.color, product: { id: findProduct.id } },

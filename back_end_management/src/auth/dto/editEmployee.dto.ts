@@ -21,8 +21,6 @@ export class EditEmployeeDto {
 
   @IsString()
   @IsOptional()
-  @IsNotEmpty()
-  // @Length(6, 20)
   fullname: string;
 
   @IsString()

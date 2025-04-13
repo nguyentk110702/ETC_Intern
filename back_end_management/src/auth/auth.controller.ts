@@ -63,7 +63,8 @@ export class AuthController {
     @Query('page') page: number,
     @Query('limit') limit: number,
     @Query('role') role: string,
-    @Query('createAt') createAt: string,
+    @Query('startDate') startDate: string,
+    @Query('endDate') endDate: string,
     @Query('status') status: number,
     @Session() session: Record<string, userSessionType>,
   ) {
@@ -72,7 +73,8 @@ export class AuthController {
       page,
       limit,
       role,
-      createAt,
+      startDate,
+      endDate,
       status,
       session,
     );
@@ -142,7 +144,6 @@ export class AuthController {
     return this.authService.editUser(id, body);
   }
 
-  @SetMetadata('roles', ['MANAGER', 'ADMIN'])
   @UseGuards(AuthGuard)
   @Put('employee/:id')
   async editEmployee(
@@ -150,6 +151,9 @@ export class AuthController {
     @Body() body: EditEmployeeDto,
     @Session() session: Record<string, userSessionType>,
   ) {
+    console.log('ID:', id);
+    console.log('Body:', body);
+    console.log('Session:', session);
     return this.authService.editEmployee(id, body, session);
   }
 

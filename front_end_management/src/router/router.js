@@ -7,6 +7,10 @@ import Product from "@/pages/product/Product.vue";
 import Productvariant from "@/pages/product_variant/Productvariant.vue";
 import Order from "@/pages/order/Order.vue";
 import Home from "@/pages/Home.vue";
+import EmployeeDetail from "@/pages/employee/EmployeeDetail.vue";
+import AddProduct from "@/pages/product/AddProduct.vue";
+import AddProductVariant from "@/pages/product_variant/AddProductVariant.vue";
+import CreateOrder from "@/pages/order/CreateOrder.vue";
 
 const routes = [
     {
@@ -14,11 +18,16 @@ const routes = [
         component: Dashboard, // Dùng layout chung cho dashboard
         children: [
             { path: "employee", component: Employee },
-            { path: "employee", component: Employee },
+            { path: "employee/:id", component: EmployeeDetail },
             { path: "product", component: Product },
-            { path: "productvariant", component: Productvariant },
+            { path: "product/:id/variants", component: Productvariant },
             { path: "order", component: Order },
+            { path: "addProduct", component: AddProduct },
+            { path: "productvariant/create/:productId", component: AddProductVariant },
+            { path: "createorder", component: CreateOrder },
+
             { path: "home", component: Home },
+
 
         ],
     },

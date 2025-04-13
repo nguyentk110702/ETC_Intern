@@ -16,7 +16,7 @@ export class CreateOrderDTO {
   @IsNotEmpty()
   @IsString()
   orderCode: string;
-  
+
   @IsOptional()
   @IsInt()
   discount?: number;
@@ -24,9 +24,6 @@ export class CreateOrderDTO {
   @IsOptional()
   @IsInt()
   deliveryCost?: number;
-
-  @IsEnum(['0', '1'])
-  payment: '0' | '1';
 
   @IsEnum(['0', '1', '2'])
   orderStatus: '0' | '1' | '2';
@@ -51,12 +48,16 @@ export class CreateOrderDTO {
   @IsString()
   customer?: string;
 
+  @IsOptional()
   @IsInt()
   createById: number;
 
   @IsEnum(ShippingStatus)
   @IsOptional()
   shippingStatus?: ShippingStatus;
+
+  @IsEnum(['0', '1'])
+  payment: '0' | '1';
 
   @Type(() => OrderItems)
   @IsNotEmpty()

@@ -36,13 +36,19 @@ export class ProductsService {
           { skuCode: Like(`%${search}%`) },
           { barCode: Like(`%${search}%`) },
         ]
-      : [{}];
+      : [{ isDelete: 0 }];
 
     const total = await this.productRepository.count({ where: whereCondition });
 
     const products = await this.productRepository.find({
       where: whereCondition,
-      relations: ['productVariants'],
+      relations: [
+        'productVariants',
+        'productVariants.color',
+        'productVariants.size',
+        'sizes',
+        'colors',
+      ],
       take: limit,
       skip: skip,
     });
@@ -79,7 +85,7 @@ export class ProductsService {
   async softDelete(id: number): Promise<void> {
     const product = await this.productRepository.findOne({
       where: { id },
-      relations: ['variants'], // Lấy danh sách các variants liên quan
+      relations: ['productVariants'],
     });
 
     if (!product) throw new NotFoundException('Product not found');
@@ -95,9 +101,5 @@ export class ProductsService {
         await this.productRepository.save(variant);
       }
     }
-  }
-
-  async remove(id: number): Promise<void> {
-    await this.productRepository.delete(id);
   }
 }

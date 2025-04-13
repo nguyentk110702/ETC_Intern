@@ -11,7 +11,7 @@ export class RoleService {
   ) {}
 
   findAllRole() {
-    return this.roleRepository.find({ where: { name: Not('MANAGER') } });
+    return this.roleRepository.find({ where: { name: Not('ADMIN') } });
   }
 
   async createRole(nameRole: string) {

@@ -1,22 +1,30 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
+import { NestExpressApplication } from '@nestjs/platform-express';
 import * as session from 'express-session';
 import * as passport from 'passport';
+import { join } from 'path';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
-  // ✅ Bật CORS để cho phép frontend truy cập
+  // ✅ Cho phép frontend truy cập
   app.enableCors({
-    origin: 'http://localhost:5174', // Chỉ cho phép frontend này
-    credentials: true, // Quan trọng nếu dùng session hoặc cookies
+    origin: 'http://localhost:5173',
+    credentials: true,
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
     allowedHeaders: 'Content-Type,Authorization',
   });
 
-  app.useGlobalPipes(new ValidationPipe());
+  // ✅ Pipes
+  app.useGlobalPipes(
+    new ValidationPipe({
+      transform: true,
+    }),
+  );
 
+  // ✅ Session & Passport
   app.use(
     session({
       secret: 'mySecretKey',
@@ -25,14 +33,20 @@ async function bootstrap() {
       cookie: { maxAge: 1000 * 60 * 60 },
     }),
   );
-
   app.use(passport.initialize());
   app.use(passport.session());
 
-  await app.listen(process.env.PORT ?? 3000);
-  console.log(
-    `🚀 Server running on http://localhost:${process.env.PORT ?? 3000}`,
-  );
+  // ✅ Serve ảnh từ thư mục uploads (cùng cấp với src)
+  const uploadsPath = join(process.cwd(), 'uploads'); // 👈 dùng process.cwd() thay vì __dirname
+  console.log('📁 Static files served from:', uploadsPath);
+  app.useStaticAssets(uploadsPath, {
+    prefix: '/uploads/',
+  });
+
+  // ✅ Listen
+  const PORT = process.env.PORT || 3000;
+  await app.listen(PORT);
+  console.log(`🚀 Server running at http://localhost:${PORT}`);
 }
 
 bootstrap();

@@ -16,6 +16,8 @@ import {
 import { ProductsService } from './product.service';
 import { CreateProductDto } from './dto/createProduct.dto';
 import { AuthGuard } from '../auth/auth.guard';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { diskStorage } from 'multer';
 
 @UseGuards(AuthGuard)
 @Controller('product')
@@ -24,10 +26,27 @@ export class ProductController {
 
   @SetMetadata('roles', ['ADMIN', 'MANAGER'])
   @Post()
+  @UseInterceptors(
+    FileInterceptor('image', {
+      storage: diskStorage({
+        destination: './uploads', // thư mục lưu ảnh
+        filename: (req, file, cb) => {
+          const ext = file.originalname.split('.').pop();
+          const fileName = `product-${Date.now()}.${ext}`;
+          cb(null, fileName);
+        },
+      }),
+    }),
+  )
   async create(
+    @UploadedFile() file: Express.Multer.File,
     @Body() createProductDto: CreateProductDto,
     @Session() session: Record<string, any>,
   ) {
+    if (file) {
+      createProductDto.image = file.filename;
+    }
+    console.log('Uploaded file:', file);
     return this.productService.create(createProductDto);
   }
 
@@ -58,10 +77,5 @@ export class ProductController {
   @SetMetadata('roles', ['ADMIN'])
   async removeSoft(@Param('id') id: number) {
     return this.productService.softDelete(id);
-  }
-
-  @Delete(':id')
-  async remove(@Param('id') id: number) {
-    return this.productService.remove(id);
   }
 }

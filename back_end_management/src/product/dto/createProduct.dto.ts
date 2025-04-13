@@ -1,4 +1,5 @@
 import { IsNotEmpty, IsString, IsNumber, IsOptional } from 'class-validator';
+import { Type } from 'class-transformer';
 
 export class CreateProductDto {
   @IsNotEmpty()
@@ -26,22 +27,26 @@ export class CreateProductDto {
   description?: string;
 
   @IsNotEmpty()
+  @Type(() => Number)
   @IsNumber()
   sellPrice: number;
 
   @IsOptional()
+  @Type(() => Number)
   @IsNumber()
-  comparePrice?: number; // Giá so sánh có thể không bắt buộc
+  comparePrice?: number;
 
   @IsOptional()
+  @Type(() => Number)
   @IsNumber()
-  cost?: number; // Giá vốn có thể không bắt buộc
+  cost?: number;
 
   @IsOptional()
   @IsString()
-  image?: string; // URL ảnh sản phẩm
+  image?: string;
 
   @IsNotEmpty()
+  @Type(() => Number)
   @IsNumber()
   quantity: number;
 }

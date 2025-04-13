@@ -29,27 +29,30 @@ export class OrderService {
 
   async createOrder(session: Record<string, any>, dataOrder: CreateOrderDTO) {
     return this.orderRepository.manager.transaction(async (transaction) => {
+      if (!dataOrder.addressShipping) {
+        throw new BadRequestException('Shipping address is required');
+      }
+
+      // Khởi tạo order nhưng CHƯA LƯU
       const newOrder = transaction.create(Order, {
         orderCode: dataOrder.orderCode,
         customer: dataOrder.customer,
-        address_shipping: dataOrder.addressShipping,
+        addressShipping: dataOrder.addressShipping,
         area: dataOrder.area,
         deliveryCost: dataOrder.deliveryCost ?? 0,
         tax: dataOrder.tax ?? 0,
         discount: dataOrder.discount ?? 0,
         payment: dataOrder.payment,
+        paymentMethodId: dataOrder.paymentMethodId,
         orderStatus: dataOrder.orderStatus,
         shippingStatus: dataOrder.shippingStatus || ShippingStatus.PENDING,
         created_at: new Date(),
         updated_at: new Date(),
       });
 
-      await transaction.save(newOrder); // ✅ Lưu Order trước
-      if (!dataOrder.addressShipping) {
-        throw new BadRequestException('Shipping address is required');
-      }
+      let subtotal = 0;
+      await transaction.save(newOrder);
 
-      let subtotal = 0; // ✅ Tính tổng giá trước khi áp dụng thuế và phí giao hàng
       const orderItems: OrderItems[] = [];
 
       for (const item of dataOrder.items) {
@@ -65,37 +68,41 @@ export class OrderService {
             `Variant ${item.variantId} is out of stock`,
           );
 
+        // Giảm tồn kho
         findVariant.quantity = (findVariant.quantity ?? 0) - item.quantity;
         await transaction.save(findVariant);
 
-        // ✅ Tính giá từng item
         const itemPrice = findVariant.sellPrice * item.quantity;
         subtotal += itemPrice;
 
-        // ✅ Gán orderId cho OrderItem
         const orderItem = transaction.create(OrderItems, {
           quantity: item.quantity,
-          price: findVariant.sellPrice, // ✅ Lưu giá tại thời điểm đặt hàng
-          total: itemPrice, // ✅ Lưu tổng giá cho item
+          price: findVariant.sellPrice,
+          total: itemPrice,
           variant: findVariant,
-          order: newOrder, // ✅ Đảm bảo orderId có giá trị
+          order: newOrder,
         });
 
-        await transaction.save(orderItem);
         orderItems.push(orderItem);
       }
 
-      // ✅ Tính tổng giá đơn hàng
+      // ✅ Lưu Order SAU khi kiểm tra xong tồn kho
+      await transaction.save(newOrder);
+
+      // ✅ Lưu các OrderItems
+      for (const orderItem of orderItems) {
+        await transaction.save(orderItem);
+      }
+
       const totalPrice =
         subtotal +
         (dataOrder.deliveryCost ?? 0) -
         (dataOrder.discount ?? 0) +
         (dataOrder.tax ?? 0);
 
-      // ✅ Cập nhật lại giá Order
       newOrder.orderItems = orderItems;
-      newOrder.price = subtotal; // Tổng giá sản phẩm chưa tính phí
-      newOrder.totalPrice = totalPrice; // Tổng giá cuối cùng sau khi cộng phí, thuế, trừ giảm giá
+      newOrder.price = subtotal;
+      newOrder.totalPrice = totalPrice;
 
       return await transaction.save(newOrder);
     });

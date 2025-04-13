@@ -1,5 +1,4 @@
 import {
-  ConflictException,
   ForbiddenException,
   HttpException,
   HttpStatus,
@@ -178,7 +177,8 @@ export class AuthService {
     page: number = 1,
     limit: number = 10,
     roleQuery?: string,
-    createAt?: string,
+    startDate?: string,
+    endDate?: string,
     status?: number,
     session?: Record<string, userSessionType>,
   ) {
@@ -193,7 +193,6 @@ export class AuthService {
         where: { id: idUser },
         relations: ['role'],
       });
-
       if (!user) throw new NotFoundException('User not found');
 
       const isAdmin = user.role?.name === 'ADMIN';
@@ -201,57 +200,77 @@ export class AuthService {
       const isStaff = user.role?.name === 'STAFF';
 
       if (isStaff) {
-        const staffInfo = await this.authRepository.findOne({
-          where: { id: user.id },
-          relations: ['role'],
-        });
-
         return {
-          listEmployee: staffInfo ? [staffInfo] : [],
+          listEmployee: [user], // Nhân viên chỉ thấy chính họ
           page,
           limit,
         };
       }
+
       if (!isAdmin && !isManager) {
         throw new ForbiddenException(
           'You do not have permission to view employees',
         );
       }
 
-      const whereConditions: FindOptionsWhere<AuthEntity> = {};
-
-      if (!isAdmin) {
-        whereConditions.managerId = user.managerId || user.id;
-      } // ADMIN sẽ không có điều kiện này, lấy toàn bộ nhân viên
+      const whereConditions: FindOptionsWhere<AuthEntity>[] = [];
 
       if (search) {
-        whereConditions.email = Like(`%${search}%`);
-        whereConditions.phone = Like(`%${search}%`);
-        whereConditions.fullName = Like(`%${search}%`);
+        whereConditions.push(
+          { email: Like(`%${search}%`) },
+          { phone: Like(`%${search}%`) },
+          { fullName: Like(`%${search}%`) },
+        );
       }
 
-      // Lọc theo vai trò (role)
+      let roleCondition = {};
       if (roleQuery) {
         const findRole = await this.roleRepository.findOne({
           where: { name: roleQuery },
         });
         if (!findRole) throw new NotFoundException('Role not found');
-        whereConditions.role = findRole;
-      }
-      if (status !== undefined && [0, 1].includes(status)) {
-        whereConditions.status = status;
+        roleCondition = { role: findRole };
       }
 
-      // Lọc theo ngày tạo
-      if (createAt) {
-        const startDate = new Date(createAt);
-        startDate.setHours(0, 0, 0, 0);
-        const endDate = new Date(createAt);
-        endDate.setHours(23, 59, 59, 999);
-        whereConditions.created_at = Between(startDate, endDate);
+      let statusCondition = {};
+      if (status !== undefined && [0, 1].includes(Number(status))) {
+        statusCondition = { status: Number(status) };
       }
-      let listEmployee = await this.authRepository.find({
-        where: whereConditions,
+
+      let dateCondition = {};
+      if (startDate && endDate) {
+        const start = new Date(startDate);
+        start.setHours(0, 0, 0, 0);
+
+        const end = new Date(endDate);
+        end.setHours(23, 59, 59, 999);
+
+        dateCondition = {
+          created_at: Between(start, end),
+        };
+      }
+
+      let managerCondition = {};
+      if (isManager) {
+        managerCondition = { managerId: user.id };
+      }
+
+      const listEmployee = await this.authRepository.find({
+        where:
+          whereConditions.length > 0
+            ? whereConditions.map((condition) => ({
+                ...condition,
+                ...roleCondition,
+                ...statusCondition,
+                ...dateCondition,
+                ...managerCondition,
+              }))
+            : {
+                ...roleCondition,
+                ...statusCondition,
+                ...dateCondition,
+                ...managerCondition,
+              },
         skip: (page - 1) * limit,
         take: limit,
         relations: ['role'],
@@ -259,24 +278,17 @@ export class AuthService {
         order: { created_at: 'DESC' },
       });
 
-      if (!isAdmin && !isManager) {
-        listEmployee = listEmployee.filter(
-          (employee) => employee.id !== user.id,
-        );
-      }
-
-      return {
-        listEmployee,
-        page,
-        limit,
-      };
+      return { listEmployee, page, limit };
     } catch (error) {
       console.error('Error in getAllEmployeeByIdManager:', error);
 
-      if (error instanceof NotFoundException) throw error;
-      if (error instanceof UnauthorizedException) throw error;
-      if (error instanceof ForbiddenException) throw error;
-
+      if (
+        error instanceof NotFoundException ||
+        error instanceof UnauthorizedException ||
+        error instanceof ForbiddenException
+      ) {
+        throw error;
+      }
       throw new InternalServerErrorException(
         'An error occurred while fetching employees',
       );
@@ -306,7 +318,6 @@ export class AuthService {
 
       if (!findEmployee) throw new NotFoundException('Employee not found');
 
-      const isAdmin = user.role?.name === 'ADMIN';
       const isManager = user.role?.name === 'MANAGER';
       const isStaff = user.role?.name === 'STAFF';
 
@@ -329,11 +340,11 @@ export class AuthService {
 
       findEmployee.email = body.email;
       findEmployee.phone = body.phone;
-      findEmployee.status = body.status; // 0 hoặc 1
+      findEmployee.status = body.status;
       findEmployee.address = body.address;
       findEmployee.fullName = body.fullname;
       findEmployee.updated_at = new Date();
-
+      console.log('update success');
       return await this.authRepository.save(findEmployee);
     } catch (error) {
       console.error('Error in editEmployee:', error);

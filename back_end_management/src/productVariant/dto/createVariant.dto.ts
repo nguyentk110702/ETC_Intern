@@ -4,7 +4,7 @@ import { IsNotEmpty, IsNumber, IsOptional, IsString } from 'class-validator';
 export class CreateVarianDto {
   @Type(() => Number)
   @IsNumber()
-  @IsNotEmpty()
+  @IsOptional()
   idProduct: number;
 
   @IsNotEmpty()
@@ -36,7 +36,7 @@ export class CreateVarianDto {
 
   @Type(() => Number)
   @IsNumber()
-  @IsNotEmpty()
+  @IsOptional()
   quantity: number;
 
   @IsString()
