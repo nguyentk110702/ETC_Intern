@@ -6,6 +6,7 @@ import {
   Param,
   ParseIntPipe,
   Post,
+  Put,
   SetMetadata,
   UploadedFile,
   UseGuards,
