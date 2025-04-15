@@ -31,26 +31,7 @@
       :enablePaymentTag="true"
       :enableOrderStatusTag="true"
   />
-  <a-modal
-      v-model:open="isModalVisible"
-      title="Cập nhật đơn hàng"
-      @ok="handleUpdate"
-      okText="Lưu"
-      cancelText="Hủy"
-  >
-    <div style="display: flex; flex-direction: column; gap: 16px;">
-      <a-select v-model:value="updateForm.payment" placeholder="Trạng thái thanh toán">
-        <a-select-option :value="0">Chưa thanh toán</a-select-option>
-        <a-select-option :value="1">Đã thanh toán</a-select-option>
-      </a-select>
 
-      <a-select v-model:value="updateForm.orderStatus" placeholder="Trạng thái đơn hàng">
-        <a-select-option :value="0">Đang giao hàng</a-select-option>
-        <a-select-option :value="1">Đang lưu kho</a-select-option>
-        <a-select-option :value="2">Đã hủy</a-select-option>
-      </a-select>
-    </div>
-  </a-modal>
 </template>
 
 <script setup>
@@ -60,6 +41,7 @@ import dayjs from "dayjs";
 import { useRouter } from "vue-router";
 import TableComponent from "@/components/TableComponent.vue";
 import {message, Tag} from "ant-design-vue";
+import {EyeOutlined} from "@ant-design/icons-vue";
 
 
 
@@ -102,7 +84,22 @@ const columns = [
 
   { title: "Khu vực", dataIndex: "area", key: "area" },
   { title: "Địa chỉ giao hàng", dataIndex: "addressShipping", key: "addressShipping" },
- 
+  {
+    title: "Hành động",
+    dataIndex: "actions",
+    key: "actions",
+    customRender: ({ record }) => {
+      return h(
+          EyeOutlined,
+          {
+            type: "link",
+            onClick: () => router.push(`orderDetail/${record.id}`)
+          },
+          "Xem chi tiết"
+      );
+    },
+  }
+
 ];
 
 
@@ -133,37 +130,11 @@ const fetchOrders = async () => {
     loading.value = false;
   }
 };
-const isModalVisible = ref(false);
-const selectedOrder = ref(null);
-const updateForm = {
-  payment: 1,  // Kiểu number
-  orderStatus: 0,  // Kiểu number
-};
 
-const openUpdateModal = (record) => {
-  selectedOrder.value = record;
-  updateForm.payment = Number(record.payment);  // Sửa lại kiểu thành number
-  updateForm.orderStatus = Number(record.orderStatus);
-  isModalVisible.value = true;
-};
 
-const handleUpdate = async () => {
-  try {
-    await axios.put(`/order/${selectedOrder.value.id}`, {
-      payment: updateForm.payment,
-      orderStatus: updateForm.orderStatus,
-    });
-    console.log({
-      payment: updateForm.payment,
-      orderStatus: updateForm.orderStatus
-    });
-    message.success('Cập nhật đơn hàng thành công');
-    isModalVisible.value = false;
-    fetchOrders(); // làm mới danh sách
-  } catch (err) {
-    message.error('Lỗi khi cập nhật đơn hàng');
-  }
-};
+
+
+
 const goToCreateOrder = () => {
   router.push('/home/createorder');
 };
@@ -172,9 +143,5 @@ onMounted(() => {
 });
 </script>
 <style scoped>
-.table-actions {
-  display: flex;
-  justify-content: space-between;
-  margin-top: 16px;
-}
+
 </style>

@@ -148,4 +148,12 @@ export class OrderService {
 
     return await this.orderRepository.save(findOrder);
   }
+
+  async getOrderDetail(id: number) {
+    return this.orderRepository.findOne({
+      where: { id },
+      relations: ['orderItems', 'orderItems.variant'], // nếu cần lấy kèm các quan hệ
+      withDeleted: true, // nếu bạn muốn lấy cả đơn hàng đã bị soft-delete
+    });
+  }
 }

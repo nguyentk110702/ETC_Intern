@@ -31,9 +31,10 @@
 
 
 <script setup>
-import {ref, onMounted, computed} from "vue";
+import {ref, onMounted, computed, onUnmounted} from "vue";
 import apiClient  from "../../axios.js";
 import { useRouter } from "vue-router";
+import {message} from "ant-design-vue";
 
 const user = ref(null);
 const router = useRouter();
@@ -43,9 +44,15 @@ const fetchUserSession = async () => {
   try {
     const response = await apiClient.get("/session", { withCredentials: true });
     console.log("Dữ liệu từ API /session:", response.data);
-    user.value = response.data.user?.data || response.data; // Lấy user từ `user.data`
+    user.value = response.data.user?.data || response.data; // Cập nhật user nếu hợp lệ
   } catch (error) {
-    console.error("Không tìm thấy session:", error);
+    console.error("❌ Không tìm thấy session hoặc tài khoản bị khóa:", error?.response?.status);
+
+    if (error.response?.status === 403) {
+      message.warning("Tài khoản của bạn đã bị khóa!");
+    }
+
+    router.push("/login");
   }
 };
 
@@ -60,12 +67,37 @@ const logout = async () => {
   }
 };
 
+const checkSessionLoop = async () => {
+  try {
+    console.log('🔄 Gửi request /session...');
+    await apiClient.get("/session", { withCredentials: true });
+    console.log('✅ Session hợp lệ');
+  } catch (err) {
+    console.log('⚠️ Session lỗi:', err?.response?.status);
+    if (err.response?.status === 403) {
+      message.warning("Tài khoản của bạn đã bị khóa!");
+      router.push("/login");
+      return;
+    }
+  }
 
+  // Lặp lại sau 5s nếu vẫn còn hoạt động
+  intervalId = setTimeout(checkSessionLoop, 5000);
+};
 // Tạo chữ cái đầu từ tên (ví dụ: Nguyễn Văn A -> "N")
 const initials = computed(() => {
   return user.value?.fullName ? user.value.fullName.charAt(0).toUpperCase() : "U";
 });
-onMounted(fetchUserSession);
+let intervalId = null;
+onMounted(() => {
+  fetchUserSession();
+  // checkSessionLoop();
+});
+onUnmounted(() => {
+  if (intervalId) {
+    clearInterval(intervalId);
+  }
+});
 
 </script>
 

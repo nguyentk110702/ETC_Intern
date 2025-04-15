@@ -19,19 +19,13 @@ import { RoleModule } from '../role/role.module';
 })
 export class AuthModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
-    consumer.apply(AuthMiddleware).forRoutes(
-      {
-        path: 'auth/users',
-        method: RequestMethod.GET,
-      },
-      {
-        path: 'auth/edit/:id',
-        method: RequestMethod.POST,
-      },
-      {
-        path: 'auth/delete/:id',
-        method: RequestMethod.DELETE,
-      },
-    );
+    consumer
+      .apply(AuthMiddleware)
+      .exclude(
+        { path: 'login', method: RequestMethod.POST },
+        { path: 'register', method: RequestMethod.POST },
+        { path: 'logout', method: RequestMethod.POST }, // nếu cần
+      )
+      .forRoutes('*');
   }
 }

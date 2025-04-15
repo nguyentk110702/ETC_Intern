@@ -35,6 +35,15 @@ export class OrderController {
     return this.orderService.getAllOrders();
   }
 
+  @Get(':id')
+  async getOrderDetail(@Param('id', new ParseIntPipe()) id: number) {
+    const order = await this.orderService.getOrderDetail(id);
+    if (!order) {
+      throw new NotFoundException('Order not found');
+    }
+    return order;
+  }
+
   @Put(':id')
   async updateOrder(
     @Body() dataOrder: UpdateOrderDto,

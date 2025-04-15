@@ -150,6 +150,7 @@ const handleEditOk = async () => {
 
     const response = await axios.put(`/employee/${route.params.id}`, payload, {
       headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+
     });
 
     if (response.status === 200) {

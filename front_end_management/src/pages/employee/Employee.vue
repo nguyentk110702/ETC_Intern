@@ -59,49 +59,64 @@
 
   </TableComponent>
 
-  <a-modal v-model:open="isShowModel" title="Thêm nhân viên" @cancel="handleCancel ">
-    <form @submit.prevent="handleOk ">
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 ">
-        <div>
-          <Text class="reset-margin" text="Tên nhân viên"></Text>
-          <a-input v-model:value="newEmployee.fullname" placeholder="Nhập tên nhân viên" />
-        </div>
-        <div>
-          <Text class="reset-margin" text="Số điện thoại"></Text>
-          <a-input v-model:value="newEmployee.phone" placeholder="Nhập số điện thoại" />
-        </div>
-        <div>
-          <Text class="reset-margin" text="Địa chỉ"></Text>
-          <a-input v-model:value="newEmployee.address" placeholder="Nhập địa chỉ" />
-        </div>
-        <div>
-          <Text class="reset-margin" text="Mật khẩu"></Text>
-          <a-input v-model:value="newEmployee.password" type="password" placeholder="Nhập mật khẩu" />
-        </div>
-        <div>
-          <Text class="reset-margin" text="Trạng thái"></Text>
-          <a-select v-model:value="newEmployee.status" style="width: 100%">
-            <a-select-option :value="0">Đang làm việc</a-select-option>
-            <a-select-option :value="1">Nghỉ việc</a-select-option>
-          </a-select>
-        </div>
-        <div>
-          <Text class="reset-margin" text="Vai trò"></Text>
-          <a-select v-model:value="newEmployee.id_role" placeholder="Chọn vai trò" style="width: 100%">
-            <a-select-option v-for="role in roles" :key="role.id" :value="role.id">
-              {{ role.name }}
-            </a-select-option>
-          </a-select>
-        </div>
-      </div>
-      <div class="flex justify-end mt-6">
+  <a-modal
+      v-model:open="isShowModel"
+      title="Thêm nhân viên"
+      @cancel="handleCancel"
+      :footer="null"
+      width="700px"
+      centered
+  >
+    <form @submit.prevent="handleOk">
+      <a-row :gutter="[16, 16]">
+        <a-col :span="24" :md="12">
+          <a-form-item label="Tên nhân viên">
+            <a-input v-model:value="newEmployee.fullname" placeholder="Nhập tên nhân viên" />
+          </a-form-item>
+        </a-col>
+        <a-col :span="24" :md="12">
+          <a-form-item label="Số điện thoại">
+            <a-input v-model:value="newEmployee.phone" placeholder="Nhập số điện thoại" />
+          </a-form-item>
+        </a-col>
+        <a-col :span="24" :md="12">
+          <a-form-item label="Địa chỉ">
+            <a-input v-model:value="newEmployee.address" placeholder="Nhập địa chỉ" />
+          </a-form-item>
+        </a-col>
+        <a-col :span="24" :md="12">
+          <a-form-item label="Mật khẩu">
+            <a-input v-model:value="newEmployee.password" type="password" placeholder="Nhập mật khẩu" />
+          </a-form-item>
+        </a-col>
+        <a-col :span="24" :md="12">
+          <a-form-item label="Trạng thái">
+            <a-select v-model:value="newEmployee.status" placeholder="Chọn trạng thái">
+              <a-select-option :value="0">Đang làm việc</a-select-option>
+              <a-select-option :value="1">Nghỉ việc</a-select-option>
+            </a-select>
+          </a-form-item>
+        </a-col>
+        <a-col :span="24" :md="12">
+          <a-form-item label="Vai trò">
+            <a-select v-model:value="newEmployee.id_role" placeholder="Chọn vai trò">
+              <a-select-option v-for="role in roles" :key="role.id" :value="role.id">
+                {{ role.name }}
+              </a-select-option>
+            </a-select>
+          </a-form-item>
+        </a-col>
+      </a-row>
+
+      <a-form-item style="text-align: right; margin-top: 24px;">
         <a-space>
           <a-button @click="handleCancel">Hủy</a-button>
           <a-button type="primary" html-type="submit">Thêm nhân viên</a-button>
         </a-space>
-      </div>
+      </a-form-item>
     </form>
   </a-modal>
+
 </template>
 
 <script setup>

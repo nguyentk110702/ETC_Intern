@@ -11,6 +11,7 @@ import EmployeeDetail from "@/pages/employee/EmployeeDetail.vue";
 import AddProduct from "@/pages/product/AddProduct.vue";
 import AddProductVariant from "@/pages/product_variant/AddProductVariant.vue";
 import CreateOrder from "@/pages/order/CreateOrder.vue";
+import OrderDetail from "@/pages/order/OrderDetail.vue";
 
 const routes = [
     {
@@ -25,8 +26,9 @@ const routes = [
             { path: "addProduct", component: AddProduct },
             { path: "productvariant/create/:productId", component: AddProductVariant },
             { path: "createorder", component: CreateOrder },
-
             { path: "home", component: Home },
+            { path: "orderDetail/:id", component: OrderDetail },
+
 
 
         ],

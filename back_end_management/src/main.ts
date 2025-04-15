@@ -9,7 +9,7 @@ import { join } from 'path';
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
   app.set('trust proxy', 1);
-  // ✅ Cho phép frontend truy cập
+
   app.enableCors({
     origin: 'http://localhost:5173',
     credentials: true,
@@ -32,11 +32,6 @@ async function bootstrap() {
       secret: 'mySecretKey',
       resave: false,
       saveUninitialized: false,
-      cookie: {
-        secure: true, // BẮT BUỘC khi dùng ngrok HTTPS
-        httpOnly: true,
-        sameSite: 'none', // để cookie hoạt động cross-origin
-      },
     }),
   );
 

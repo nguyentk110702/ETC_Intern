@@ -62,7 +62,7 @@ export class Order {
 
   @Column('enum', {
     name: 'orderStatus',
-    comment: '0: Chờ xử lý, 1: Đang giao, 2: Hoàn tất',
+    comment: '0: Đang giao hàng, 1: Đang lưu kho, 2: Đã hủy',
     enum: ['0', '1', '2'],
   })
   orderStatus: '0' | '1' | '2';

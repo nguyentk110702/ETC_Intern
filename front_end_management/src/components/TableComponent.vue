@@ -5,9 +5,11 @@
       :loading="loading"
       :row-selection="enableSelection ? rowSelection : null"
       rowKey="id"
+      :customRender="() => {}"
   >
-    <template #bodyCell="{ column, text, record }">
-      <slot name="bodyCell" :column="column" :text="text" :record="record">
+    <template #bodyCell="{ column, text, record, index }">
+      <!-- Dùng slot nếu có -->
+      <slot name="bodyCell" :column="column" :text="text" :record="record" :index="index">
         <!-- Payment Tag -->
         <template v-if="column.dataIndex === 'payment' && enablePaymentTag">
           <a-tag :color="paymentColor(record.payment)">
@@ -22,15 +24,21 @@
           </a-tag>
         </template>
 
-        <!-- Default -->
+        <!-- Nếu có customRender thì để Ant Design xử lý -->
+        <template v-else-if="column.customRender">
+          <!-- Không render gì ở đây, vì Ant Design sẽ xử lý -->
+        </template>
+
+        <!-- Mặc định: hiển thị text -->
         <template v-else>
           {{ text }}
         </template>
       </slot>
     </template>
-
   </a-table>
 </template>
+
+
 
 <script setup>
 

@@ -87,6 +87,27 @@ export class AuthController {
       if (!sessionUser) {
         throw new HttpException('No active session', HttpStatus.UNAUTHORIZED);
       }
+
+      const user = await this.authService.findById(sessionUser.id); // Dùng service hoặc repository để tìm user trong DB
+
+      if (!user) {
+        session.destroy(() => {}); // Xóa session nếu không tìm thấy user
+        throw new HttpException(
+          'Tài khoản không tồn tại',
+          HttpStatus.NOT_FOUND,
+        );
+      }
+
+      if (user.status === 1) {
+        // Kiểm tra trạng thái tài khoản
+        session.destroy(() => {}); // Xóa session nếu tài khoản bị khóa
+        throw new HttpException(
+          'Tài khoản của bạn đã bị khóa',
+          HttpStatus.FORBIDDEN,
+        ); // Trả về lỗi 403
+      }
+
+      // Trả về thông tin người dùng nếu tài khoản không bị khóa
       return { user: sessionUser };
     } catch (error) {
       throw new HttpException(
@@ -151,9 +172,6 @@ export class AuthController {
     @Body() body: EditEmployeeDto,
     @Session() session: Record<string, userSessionType>,
   ) {
-    console.log('ID:', id);
-    console.log('Body:', body);
-    console.log('Session:', session);
     return this.authService.editEmployee(id, body, session);
   }
 

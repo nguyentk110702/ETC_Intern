@@ -344,7 +344,6 @@ export class AuthService {
       findEmployee.address = body.address;
       findEmployee.fullName = body.fullname;
       findEmployee.updated_at = new Date();
-      console.log('update success');
       return await this.authRepository.save(findEmployee);
     } catch (error) {
       console.error('Error in editEmployee:', error);
@@ -416,5 +415,11 @@ export class AuthService {
         'An error occurred while fetching employee details',
       );
     }
+  }
+
+  async findById(id: number): Promise<AuthEntity | null> {
+    return this.authRepository.findOne({
+      where: { id },
+    });
   }
 }

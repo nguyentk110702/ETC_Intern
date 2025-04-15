@@ -51,7 +51,7 @@
 </template>
 
 <script setup>
-import {onMounted, reactive, ref} from "vue";
+import {onMounted, onUnmounted, reactive, ref} from "vue";
 import { message } from "ant-design-vue";
 import { useRouter } from "vue-router";
 import apiClient from "../../../axios.js";
@@ -113,6 +113,24 @@ const handleLogin = async () => {
   }
 
 };
+// let intervalId = null;
+
+// onMounted(() => {
+//   intervalId = setInterval(async () => {
+//     try {
+//       await apiClient.get("/session", { withCredentials: true });
+//     } catch (err) {
+//       if (err.response?.status === 403) {
+//         message.warning("Tài khoản đã bị khóa!");
+//         router.push("/login");
+//       }
+//     }
+//   }, 5000); // Kiểm tra mỗi 5 giây
+// });
+//
+// onUnmounted(() => {
+//   clearInterval(intervalId);
+// });
 
 
 </script>
