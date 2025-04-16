@@ -32,6 +32,11 @@ async function bootstrap() {
       secret: 'mySecretKey',
       resave: false,
       saveUninitialized: false,
+      cookie: {
+        secure: false, // true nếu chạy HTTPS
+        httpOnly: true,
+        sameSite: 'lax', // hoặc 'none' nếu dùng HTTPS khác domain
+      },
     }),
   );
 

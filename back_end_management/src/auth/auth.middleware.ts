@@ -9,7 +9,6 @@ export class AuthMiddleware implements NestMiddleware {
   async use(req: any, res: any, next: (error?: Error | any) => void) {
     const sessionUser = req.session?.userData;
 
-    // 1. Không có session
     if (!sessionUser) {
       return res.status(401).json({ message: 'Phiên đăng nhập không hợp lệ' });
     }
@@ -37,7 +36,12 @@ export class AuthMiddleware implements NestMiddleware {
       });
     } else {
       // 4. Gán lại thông tin mới vào session nếu cần (optional)
-      req.session.userData = user;
+      req.session.userData = {
+        id: user.id,
+        email: user.email,
+        fullName: user.fullName,
+        role: user.role.name,
+      };
       next();
     }
   }

@@ -24,6 +24,7 @@ import { EditUserDto } from './dto/editUser.dto';
 import { CreateEmployeeDto } from './dto/createEmployee.dto';
 import { AuthGuard } from './auth.guard';
 import { EditEmployeeDto } from './dto/editEmployee.dto';
+import { Roles } from '../common/decorators/roles.decorator';
 
 @Controller()
 @UseInterceptors(ClassSerializerInterceptor)
@@ -48,6 +49,7 @@ export class AuthController {
 
   @SetMetadata('roles', ['ADMIN', 'MANAGER'])
   @UseGuards(AuthGuard)
+  @Roles('ADMIN')
   @Post('employee')
   async createEmployee(
     @Body() body: CreateEmployeeDto,

@@ -139,6 +139,7 @@ export class AuthService {
     session: Record<string, userSessionType>,
   ) {
     const idUser = session.userData;
+    console.log(idUser.role);
     if (!idUser || (idUser.role !== 'MANAGER' && idUser.role !== 'ADMIN'))
       throw new ForbiddenException('you are not manager');
     const role = await this.roleRepository.findOne({
