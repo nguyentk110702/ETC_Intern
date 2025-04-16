@@ -5,37 +5,38 @@ import { NestExpressApplication } from '@nestjs/platform-express';
 import * as session from 'express-session';
 import * as passport from 'passport';
 import { join } from 'path';
+import * as Redis from 'redis';
+import * as connectRedis from 'connect-redis';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
   app.set('trust proxy', 1);
 
-  app.enableCors({
-    origin: 'http://localhost:5173',
-    credentials: true,
-    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
-    allowedHeaders: 'Content-Type,Authorization',
-    preflightContinue: false,
-    optionsSuccessStatus: 204,
+  // Redis client cho version 3
+  const redisClient = Redis.createClient({
+    host: '127.0.0.1',
+    port: 6379,
   });
 
-  // ✅ Pipes
-  app.useGlobalPipes(
-    new ValidationPipe({
-      transform: true,
-    }),
-  );
+  redisClient.on('error', (err) => console.log('Redis error: ', err));
 
-  // ✅ Session & Passport
+  // Kết nối Redis với express-session
+  const RedisStore = connectRedis(session);
+
   app.use(
     session({
+      store: new RedisStore({
+        client: redisClient,
+        prefix: 'sess:',
+      }),
       secret: 'mySecretKey',
       resave: false,
       saveUninitialized: false,
       cookie: {
-        secure: false, // true nếu chạy HTTPS
+        secure: false,
         httpOnly: true,
-        sameSite: 'lax', // hoặc 'none' nếu dùng HTTPS khác domain
+        sameSite: 'lax',
+        maxAge: 24 * 60 * 60 * 1000, // 1 ngày
       },
     }),
   );
@@ -43,17 +44,24 @@ async function bootstrap() {
   app.use(passport.initialize());
   app.use(passport.session());
 
-  // ✅ Serve ảnh từ thư mục uploads (cùng cấp với src)
-  const uploadsPath = join(process.cwd(), 'uploads'); // 👈 dùng process.cwd() thay vì __dirname
-  console.log('📁 Static files served from:', uploadsPath);
+  app.useGlobalPipes(
+    new ValidationPipe({
+      transform: true,
+    }),
+  );
+
+  const uploadsPath = join(process.cwd(), 'uploads');
   app.useStaticAssets(uploadsPath, {
     prefix: '/uploads/',
   });
 
-  // ✅ Listen
-  const PORT = process.env.PORT || 3000;
-  await app.listen(PORT);
-  console.log(`🚀 Server running at http://localhost:${PORT}`);
+  app.enableCors({
+    origin: 'http://localhost:5173',
+    credentials: true,
+  });
+
+  await app.listen(3000);
+  console.log(`🚀 Server running at http://localhost:3000`);
 }
 
 bootstrap();

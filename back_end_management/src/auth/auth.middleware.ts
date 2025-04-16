@@ -35,7 +35,6 @@ export class AuthMiddleware implements NestMiddleware {
         return res.status(403).json({ message: 'Tài khoản đã bị khóa' });
       });
     } else {
-      // 4. Gán lại thông tin mới vào session nếu cần (optional)
       req.session.userData = {
         id: user.id,
         email: user.email,

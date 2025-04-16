@@ -109,7 +109,6 @@ export class AuthController {
         ); // Trả về lỗi 403
       }
 
-      // Trả về thông tin người dùng nếu tài khoản không bị khóa
       return { user: sessionUser };
     } catch (error) {
       throw new HttpException(
@@ -184,5 +183,19 @@ export class AuthController {
     @Session() session: Record<string, userSessionType>,
   ) {
     return this.authService.getEmployeeDetail(id, session);
+  }
+
+  @Get('set-session')
+  setSession(@Req() req: Request) {
+    req.session['test'] = 'hello-redis';
+    return { message: 'Session set!' };
+  }
+
+  @Get('get-session')
+  getSessionTest(@Req() req: Request) {
+    return {
+      message: 'Session read',
+      value: req.session['test'] || 'Session not found',
+    };
   }
 }
