@@ -25,6 +25,7 @@ import { CreateEmployeeDto } from './dto/createEmployee.dto';
 import { AuthGuard } from './auth.guard';
 import { EditEmployeeDto } from './dto/editEmployee.dto';
 import { Roles } from '../common/decorators/roles.decorator';
+import * as Redis from 'redis';
 
 @Controller()
 @UseInterceptors(ClassSerializerInterceptor)
@@ -197,5 +198,128 @@ export class AuthController {
       message: 'Session read',
       value: req.session['test'] || 'Session not found',
     };
+  }
+
+  @UseGuards(AuthGuard)
+  @Get('admin/active-users')
+  @Roles('ADMIN')
+  async getActiveUsers(@Session() session: Record<string, any>) {
+    if (!session.user) {
+      throw new HttpException('Forbidden', HttpStatus.FORBIDDEN);
+    }
+
+    return new Promise((resolve, reject) => {
+      const redisClient = Redis.createClient({
+        host: '127.0.0.1',
+        port: 6379,
+      });
+
+      redisClient.keys('sess:*', (err, keys) => {
+        if (err) {
+          console.error('Lỗi khi lấy keys từ Redis:', err);
+          return reject(
+            new HttpException('Lỗi Redis', HttpStatus.INTERNAL_SERVER_ERROR),
+          );
+        }
+
+        if (!keys.length) {
+          return resolve({ count: 0, activeUsers: [] });
+        }
+
+        redisClient.mget(keys, (err, sessions) => {
+          if (err) {
+            console.error('Lỗi khi lấy session từ Redis:', err);
+            return reject(
+              new HttpException('Lỗi Redis', HttpStatus.INTERNAL_SERVER_ERROR),
+            );
+          }
+
+          const activeUsers = sessions
+            .map((sessionStr) => {
+              try {
+                const sessionData = JSON.parse(sessionStr);
+                const user = sessionData?.user;
+                if (!user) return null;
+
+                return user.data ? user.data : user;
+              } catch {
+                return null;
+              }
+            })
+            .filter((user) => user !== null && user.role?.name !== 'ADMIN');
+
+          return resolve({
+            count: activeUsers.length,
+            activeUsers,
+          });
+        });
+      });
+    });
+  }
+
+  @Post('admin/logout-user/:id')
+  @Roles('ADMIN')
+  @UseGuards(AuthGuard)
+  async logoutUser(@Param('id') id: number): Promise<any> {
+    const redisClient = Redis.createClient({
+      host: '127.0.0.1',
+      port: 6379,
+    });
+
+    return new Promise((resolve, reject) => {
+      redisClient.keys('sess:*', (err, keys) => {
+        if (err) {
+          return reject(
+            new HttpException('Redis error', HttpStatus.INTERNAL_SERVER_ERROR),
+          );
+        }
+
+        if (!keys.length) {
+          return resolve({ message: 'Không tìm thấy session nào' });
+        }
+
+        redisClient.mget(keys, (err, sessions) => {
+          if (err) {
+            return reject(
+              new HttpException(
+                'Redis error',
+                HttpStatus.INTERNAL_SERVER_ERROR,
+              ),
+            );
+          }
+
+          const sessionsToDelete: string[] = [];
+
+          sessions.forEach((sessionStr, index) => {
+            try {
+              const sessionData = JSON.parse(sessionStr);
+              const userId =
+                sessionData?.user?.data?.id ?? sessionData?.user?.id;
+              if (userId === Number(id)) {
+                sessionsToDelete.push(keys[index]);
+              }
+            } catch (e) {
+              console.error('❌ Lỗi parse JSON session:', e);
+            }
+          });
+
+          if (sessionsToDelete.length === 0) {
+            return resolve({ message: 'Không có session phù hợp để xóa' });
+          }
+
+          redisClient.del(sessionsToDelete, (err, count) => {
+            if (err) {
+              return reject(
+                new HttpException(
+                  'Lỗi xoá session',
+                  HttpStatus.INTERNAL_SERVER_ERROR,
+                ),
+              );
+            }
+            return resolve({ message: `✅ Đã đăng xuất ${count} session` });
+          });
+        });
+      });
+    });
   }
 }

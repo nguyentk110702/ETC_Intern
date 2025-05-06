@@ -22,6 +22,10 @@
         <template #icon><ShoppingCartOutlined /></template>
         <router-link to="/home/order">Đơn hàng</router-link>
       </a-menu-item>
+      <a-menu-item key="active">
+        <template #icon><UserOutlined /></template>
+        <router-link to="/home/active">Tài Khoản Đang Đăng Nhập</router-link>
+      </a-menu-item>
     </a-menu>
   </a-layout-sider>
 </template>

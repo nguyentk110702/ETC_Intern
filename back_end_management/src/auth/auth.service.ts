@@ -37,7 +37,7 @@ export class AuthService {
   async login(
     data: LoginDto,
     session: Record<string, userSessionType>,
-  ): Promise<{ message: string; data: AuthEntity }> {
+  ): Promise<{ data: AuthEntity }> {
     console.log('data', data);
     if (!data.email && !data.phone)
       throw new HttpException(
@@ -75,7 +75,6 @@ export class AuthService {
         role: user.role.name,
       };
       return {
-        message: 'Login successfully',
         data: user,
       };
     } else {
