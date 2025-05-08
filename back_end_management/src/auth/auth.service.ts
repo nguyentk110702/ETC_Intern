@@ -17,6 +17,7 @@ import { EditUserDto } from './dto/editUser.dto';
 import { CreateEmployeeDto } from './dto/createEmployee.dto';
 import { EditEmployeeDto } from './dto/editEmployee.dto';
 import { RoleEntity } from '../role/role.entity';
+import Redis from 'ioredis';
 
 export interface userSessionType {
   id: number;
@@ -36,53 +37,56 @@ export class AuthService {
 
   async login(
     data: LoginDto,
-    session: Record<string, userSessionType>,
+    session: Record<string, any>,
   ): Promise<{ data: AuthEntity }> {
-    console.log('data', data);
-    if (!data.email && !data.phone)
+    const { email, phone, password } = data;
+
+    if (!email && !phone) {
       throw new HttpException(
-        'Email or phone is required',
+        'Email hoặc số điện thoại là bắt buộc',
         HttpStatus.BAD_REQUEST,
       );
+    }
+
     const user = await this.authRepository.findOne({
-      where: {
-        email: data.email,
-        phone: data.phone,
-        isDelete: false,
-      },
+      where: { email, phone, isDelete: false },
       relations: ['role'],
     });
 
-    if (!user) {
+    if (!user || user.status === 1) {
       throw new HttpException(
-        'Username not found or password is incorrect',
-        HttpStatus.NOT_FOUND,
-      );
-    }
-    if (user.status === 1) {
-      throw new HttpException(
-        'Tài khoản của bạn đã bị khóa!',
+        'Tài khoản không hợp lệ hoặc bị khóa',
         HttpStatus.FORBIDDEN,
       );
     }
 
-    const isMatch = await bcrypt.compare(data.password, user.password);
-    if (isMatch == true) {
-      session.userData = {
-        id: user.id,
-        email: user.email,
-        fullName: user.fullName,
-        role: user.role.name,
-      };
-      return {
-        data: user,
-      };
-    } else {
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
       throw new HttpException(
-        'Username not found or password is incorrect',
+        'Sai tài khoản hoặc mật khẩu',
         HttpStatus.NOT_FOUND,
       );
     }
+
+    // Ghi thông tin user vào session
+    session.userData = {
+      id: user.id,
+      email: user.email,
+      fullName: user.fullName,
+      role: user.role.name,
+    };
+
+    const sessionId = session.id;
+    const sessionRedisKey = `sess:${sessionId}`;
+
+    const redis = new Redis(); // nên tái sử dụng trong service riêng nếu dùng nhiều
+    try {
+      await redis.sadd(`user_sessions:${user.id}`, sessionRedisKey);
+    } finally {
+      redis.quit(); // Đóng kết nối sau khi sử dụng
+    }
+
+    return { data: user };
   }
 
   async register(

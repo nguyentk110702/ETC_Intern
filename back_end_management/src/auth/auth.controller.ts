@@ -26,6 +26,7 @@ import { AuthGuard } from './auth.guard';
 import { EditEmployeeDto } from './dto/editEmployee.dto';
 import { Roles } from '../common/decorators/roles.decorator';
 import * as Redis from 'redis';
+import { promisify } from 'util';
 
 @Controller()
 @UseInterceptors(ClassSerializerInterceptor)
@@ -266,60 +267,35 @@ export class AuthController {
       port: 6379,
     });
 
-    return new Promise((resolve, reject) => {
-      redisClient.keys('sess:*', (err, keys) => {
-        if (err) {
-          return reject(
-            new HttpException('Redis error', HttpStatus.INTERNAL_SERVER_ERROR),
-          );
-        }
+    // Dùng promisify để dùng async/await
+    const smembersAsync = promisify(redisClient.smembers).bind(redisClient);
+    const delAsync = promisify(redisClient.del).bind(redisClient);
+    const sremAsync = promisify(redisClient.srem).bind(redisClient);
 
-        if (!keys.length) {
-          return resolve({ message: 'Không tìm thấy session nào' });
-        }
+    const userSessionKey = `user_sessions:${id}`;
 
-        redisClient.mget(keys, (err, sessions) => {
-          if (err) {
-            return reject(
-              new HttpException(
-                'Redis error',
-                HttpStatus.INTERNAL_SERVER_ERROR,
-              ),
-            );
-          }
+    try {
+      // Lấy tất cả sessionRedisKey trong Set
+      const sessionRedisKeys: string[] = await smembersAsync(userSessionKey);
 
-          const sessionsToDelete: string[] = [];
+      if (!sessionRedisKeys || sessionRedisKeys.length === 0) {
+        return { message: 'Không có session nào để xoá cho user này' };
+      }
 
-          sessions.forEach((sessionStr, index) => {
-            try {
-              const sessionData = JSON.parse(sessionStr);
-              const userId =
-                sessionData?.user?.data?.id ?? sessionData?.user?.id;
-              if (userId === Number(id)) {
-                sessionsToDelete.push(keys[index]);
-              }
-            } catch (e) {
-              console.error('❌ Lỗi parse JSON session:', e);
-            }
-          });
+      // Xoá các session Redis
+      const deletedCount = await delAsync(...sessionRedisKeys);
 
-          if (sessionsToDelete.length === 0) {
-            return resolve({ message: 'Không có session phù hợp để xóa' });
-          }
+      // Xoá session keys khỏi tập hợp user_sessions
+      await sremAsync(userSessionKey, ...sessionRedisKeys);
 
-          redisClient.del(sessionsToDelete, (err, count) => {
-            if (err) {
-              return reject(
-                new HttpException(
-                  'Lỗi xoá session',
-                  HttpStatus.INTERNAL_SERVER_ERROR,
-                ),
-              );
-            }
-            return resolve({ message: `✅ Đã đăng xuất ${count} session` });
-          });
-        });
-      });
-    });
+      return {
+        message: `✅ Đã đăng xuất ${deletedCount} session cho user ${id}`,
+      };
+    } catch (error) {
+      console.error('❌ Redis error:', error);
+      throw new HttpException('Redis error', HttpStatus.INTERNAL_SERVER_ERROR);
+    } finally {
+      redisClient.quit();
+    }
   }
 }
