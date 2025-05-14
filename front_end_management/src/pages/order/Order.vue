@@ -8,19 +8,11 @@
   <div style="display: flex; justify-content: space-between; align-items: center; margin: 16px 0">
     <a-input
         v-model:value="searchOrder"
-        placeholder="Tìm kiếm theo mã đơn, tên khách, SĐT"
+        placeholder="Tìm kiếm theo mã đơn, tên khách"
         style="width: 450px"
         @pressEnter="fetchOrders"
     />
-    <div style="display: flex; gap: 8px; align-items: center;">
-      <a-select v-model:value="filterStatus" placeholder="Trạng thái đơn" style="width: 200px;">
-        <a-select-option value="pending">Chờ xác nhận</a-select-option>
-        <a-select-option value="processing">Đang xử lý</a-select-option>
-        <a-select-option value="completed">Hoàn thành</a-select-option>
-        <a-select-option value="cancelled">Đã hủy</a-select-option>
-      </a-select>
-      <a-button type="primary" @click="fetchOrders">Lọc</a-button>
-    </div>
+
   </div>
 
   <TableComponent
@@ -116,8 +108,9 @@ const paymentStatusMapping = reactive({
 const fetchOrders = async () => {
   loading.value = true;
   try {
-    const response = await axios.get('/order');
-    console.log('Danh sách đơn hàng từ API:', response.data);
+    const response = await axios.get('/order', {
+      params: { search: searchOrder.value }
+    });
     orders.value = response.data.map(order => ({
 
       ...order,
@@ -130,10 +123,6 @@ const fetchOrders = async () => {
     loading.value = false;
   }
 };
-
-
-
-
 
 const goToCreateOrder = () => {
   router.push('/home/createorder');

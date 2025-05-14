@@ -6,7 +6,7 @@ import {
 import { CreateOrderDTO } from './CreateOrderDTO';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Order, ShippingStatus } from '../../entities/entities/Order';
-import { Repository } from 'typeorm';
+import { FindOptionsWhere, Like, Repository } from 'typeorm';
 import { PaymentMethod } from '../../entities/entities/PaymentMethod';
 import { AuthEntity } from '../auth/auth.entity';
 import { OrderItems } from '../../entities/entities/OrderItems';
@@ -108,10 +108,19 @@ export class OrderService {
     });
   }
 
-  async getAllOrders() {
-    return await this.orderRepository.find({
-      order: { createdAt: 'DESC' },
-    });
+  async getAllOrders(searchTerm?: string) {
+    const query = this.orderRepository.createQueryBuilder('order');
+
+    if (searchTerm) {
+      query.where(
+        'order.orderCode LIKE :searchTerm OR order.customer LIKE :searchTerm',
+        { searchTerm: `%${searchTerm}%` },
+      );
+    }
+
+    query.orderBy('order.createdAt', 'DESC');
+
+    return await query.getMany();
   }
 
   async updateOrder(dataUpdate: UpdateOrderDto, id: number) {

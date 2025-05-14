@@ -1,7 +1,7 @@
 <template>
   <header>
     <div style="display: flex; gap: 8px; justify-content: flex-end">
-      <a-button>Phân quyền vai trò</a-button>
+
       <a-button type="primary" @click="showModel"> + Thêm nhân viên khác</a-button>
     </div>
   </header>
@@ -38,6 +38,16 @@
       :data="employees"
       :loading="loading"
       :enableSelection="true"
+      :pagination="{
+    current: currentPage > 0 ? currentPage : 1,  // Đảm bảo current luôn >= 1
+    pageSize: pageSize,
+    total: total,
+    showSizeChanger: true,
+    pageSizeOptions: ['10', '20', '50'],
+    showTotal: (total) => `Tổng ${total} nhân viên`,
+  }"
+      @change="handlePageChange"
+
   >
     <template #bodyCell="{ column, record }">
       <template v-if="column.dataIndex === 'actions'">
@@ -126,6 +136,7 @@ import dayjs from "dayjs";
 import TableComponent from "@/components/TableComponent.vue";
 import { useRoute, useRouter } from "vue-router";
 import { EyeOutlined } from "@ant-design/icons-vue";
+import {message} from "ant-design-vue";
 
 const route = useRoute();
 const router = useRouter();
@@ -151,7 +162,17 @@ const searchQuery = ref("");
 const filterRole = ref(null);
 const filterStatus = ref(null);
 const createAt = ref(null);
-
+const currentPage = ref(1);
+const pageSize = ref(10);
+const total = ref(0);
+const pagination = ref({
+  current: currentPage.value,
+  pageSize: pageSize.value,
+  total: total.value,
+  showTotal: (total) => `Tổng ${total} nhân viên`,
+  showSizeChanger: true,
+  pageSizeOptions: ['10', '20', '50'],
+});
 const fetchRoles = async () => {
   loading.value = true;
   try {
@@ -186,8 +207,10 @@ const handleOk = async () => {
     await axios.post("/employee", newEmployee.value);
     isShowModel.value = false;
     fetchEmployees();
+    message.success("Thêm nhân viên thành công!");
+
   } catch (error) {
-    console.error("Lỗi khi thêm nhân viên:", error);
+    message.error("Lỗi khi thêm nhân viên: " + (error.response?.data?.message || "Đã xảy ra lỗi"));
   }
 };
 
@@ -206,8 +229,8 @@ const fetchEmployees = async () => {
       status: filterStatus.value !== null ? filterStatus.value : undefined,
       startDate: start ? dayjs(start).format(dateFormat) : undefined,
       endDate: end ? dayjs(end).format(dateFormat) : undefined,
-      page: 1,
-      limit: 10,
+      page: currentPage.value,    // Dùng giá trị từ state
+      limit: pageSize.value,      // Dùng giá trị từ state
     };
     const response = await axios.get("/employee", { params });
 
@@ -221,13 +244,19 @@ const fetchEmployees = async () => {
       createdAt: item.created_at ? dayjs(item.created_at).format("DD/MM/YYYY") : "Chưa có dữ liệu",
       address: item.address || "Không có dữ liệu",
     }));
+    total.value = response.data.totalItems || 0;
+
   } catch (error) {
     console.error("❌ Lỗi khi gọi API:", error);
   } finally {
     loading.value = false;
   }
 };
-
+const handlePageChange = (page, pageSize) => {
+  currentPage.value = page;
+  pageSize.value = pageSize;
+  fetchEmployees();
+};
 const viewDetail = (id) => {
   router.push(`/home/employee/${id}`);
 };

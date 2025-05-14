@@ -9,6 +9,7 @@ import {
   Patch,
   Post,
   Put,
+  Query,
   Session,
   UseGuards,
 } from '@nestjs/common';
@@ -31,8 +32,8 @@ export class OrderController {
   }
 
   @Get()
-  async getAllOrders() {
-    return this.orderService.getAllOrders();
+  async getAllOrders(@Query('search') searchTerm?: string) {
+    return this.orderService.getAllOrders(searchTerm);
   }
 
   @Get(':id')

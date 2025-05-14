@@ -119,22 +119,11 @@ const handleDelete = async (id) => {
   }
 };
 
-const handleViewVersions = (product) => {
-  console.log("📦 Xem phiên bản sản phẩm:", product);
-  // Ví dụ: router.push(`/product/${product.id}/versions`);
-};
-// Lưu bộ lọc
-const emitSearch = () => {
-  fetchProducts();
-};
 
 // Khởi động
 onMounted(() => {
   fetchProducts();
 });
 
-// Modal thêm sản phẩm (placeholder)
-const showModel = () => {
-  console.log("Hiển thị modal thêm sản phẩm");
-};
+
 </script>

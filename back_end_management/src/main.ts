@@ -27,7 +27,7 @@ async function bootstrap() {
     session({
       store: new RedisStore({
         client: redisClient,
-        prefix: 'sess:',
+        prefix: '',
       }),
       secret: 'mySecretKey',
       resave: false,

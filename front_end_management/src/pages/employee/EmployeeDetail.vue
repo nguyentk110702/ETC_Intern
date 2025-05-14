@@ -11,7 +11,6 @@
         <div class="role-card" style="display: flex; gap: 8px; margin-left: 9cm">
           <div class="action-buttons">
             <a-button type="primary" @click="openEditModal">Chỉnh sửa thông tin</a-button>
-            <a-button danger @click="confirmDelete">Xóa</a-button>
           </div>
 
         </div>
@@ -78,7 +77,7 @@
       </a-form-item>
       <a-form-item label="Vai trò">
         <a-select v-model:value="editedEmployee.role" :options="roleOptions" placeholder="Chọn vai trò">
-          <a-select-option v-for="role in roles" :key="role.id" :value="role.id">
+          <a-select-option v-for="role in roles" :key="role.id" :value= "role.id">
             {{ role.name }}
           </a-select-option>
         </a-select>
@@ -119,9 +118,10 @@ const handleBack = () => {
 const openEditModal = () => {
   editedEmployee.value = {
     ...employee.value,
-    roleId: employee.value.role?.id,
+    role: employee.value.role?.id,
     status: employee.value.status === "working" ? 0 : 1, // Nếu dùng enum
   };
+  console.log(editedEmployee.value);
   isEditModalVisible.value = true;
 };
 const fetchRoles = async () => {
@@ -137,14 +137,14 @@ const fetchRoles = async () => {
 };
 const handleEditOk = async () => {
   try {
-    const { fullName, phone, email, address, roleId, status } = editedEmployee.value;
+    const { fullName, phone, email, address, role, status } = editedEmployee.value;
 
     const payload = {
       fullName,
       phone,
       email,
       address,
-      role: Number(roleId), // hoặc dùng key `roleId` nếu backend yêu cầu
+      role: Number(role),
       status: Number(status),
     };
 

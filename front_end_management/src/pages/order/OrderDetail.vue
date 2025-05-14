@@ -92,9 +92,9 @@
     <a-form layout="vertical">
       <a-form-item label="Trạng thái giao hàng">
         <a-select v-model:value="updatedShippingStatus" placeholder="Chọn trạng thái giao hàng">
-          <a-select-option value="0">Giao hàng sau</a-select-option>
-          <a-select-option value="1">Đẩy qua hãng vận chuyển</a-select-option>
-          <a-select-option value="2">Đã giao hàng</a-select-option>
+          <a-select-option value=0>Giao hàng sau</a-select-option>
+          <a-select-option value=1>Đẩy qua hãng vận chuyển</a-select-option>
+          <a-select-option value=2>Đã giao hàng</a-select-option>
 <!--          0: { label: 'Đang giao hàng', color: 'green' },-->
 <!--          1: { label: 'Đang lưu kho', color: 'blue' },-->
 <!--          2: { label: 'Đã hủy', color: 'red' },-->

@@ -203,7 +203,6 @@ const onCascaderSearch = debounce((value) => {
 
 onMounted(() => {
   fetchProducts();
-  message.info("✅ Message hoạt động rồi!");
 });
 
 const handleProductSelect = (value, selectedOptions) => {
